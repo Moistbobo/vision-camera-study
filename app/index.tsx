@@ -7,20 +7,35 @@ import {
 import NoCameraPermission from '@/components/NoCameraPermission';
 import NoCameraDevice from '@/components/NoCameraDevice';
 import ShutterButton from '@/components/ShutterButton';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { PhotoFile } from 'react-native-vision-camera/src/types/PhotoFile';
 import PhotoPreview from '@/components/PhotoPreview';
 import Animated, { SlideOutDown, ZoomInRotate } from 'react-native-reanimated';
-import { useDebounceCallback } from 'usehooks-ts';
-import { useNavigation } from 'expo-router';
 import ShutterEffect from '@/components/ShutterEffect';
+import useTapFocusGesture from '@/hooks/Camera/useTapFocusGesture';
+import useZoomGesture from '@/hooks/Camera/useZoomGesture';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import FocusPoint from '@/components/FocusPoint';
+import { useDebounceFn } from 'ahooks';
+
+const ReanimatedCamera = Animated.createAnimatedComponent(Camera);
+Animated.addWhitelistedNativeProps({
+  zoom: true,
+});
 
 export default function CameraScreen() {
-  const navigation = useNavigation();
   const device = useCameraDevice('back');
   const { hasPermission } = useCameraPermission();
 
   const cameraRef = useRef<Camera>(null);
+
+  const { focusGesture, isFocusing, focusCoords } =
+    useTapFocusGesture(cameraRef);
+  const { zoomGesture, cameraAnimatedProps } = useZoomGesture({
+    deviceMinZoom: device?.minZoom,
+    deviceMaxZoom: device?.maxZoom,
+    deviceNeutralZoom: device?.neutralZoom,
+  });
 
   const [lastTakenPhoto, setLastTakenPhoto] = useState<PhotoFile | null>(null);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(true);
@@ -50,7 +65,9 @@ export default function CameraScreen() {
     }, 250);
   };
 
-  const debouncedTakePhoto = useDebounceCallback(handleTakePhoto);
+  const { run: debouncedTakePhoto } = useDebounceFn(handleTakePhoto);
+
+  const composedGestures = Gesture.Race(zoomGesture, focusGesture);
 
   if (!hasPermission) {
     return <NoCameraPermission />;
@@ -62,13 +79,18 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      <Camera
-        ref={cameraRef}
-        photo
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={isCameraActive}
-      />
+      <GestureDetector gesture={composedGestures}>
+        <ReanimatedCamera
+          ref={cameraRef}
+          photo
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={isCameraActive}
+          animatedProps={cameraAnimatedProps}
+        />
+      </GestureDetector>
+
+      <FocusPoint coords={focusCoords} isFocusing={isFocusing} />
 
       <View style={styles.shutterButtonWrapper}>
         <ShutterButton onPress={debouncedTakePhoto} />
