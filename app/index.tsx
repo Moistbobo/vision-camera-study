@@ -10,6 +10,8 @@ import ShutterButton from '@/components/ShutterButton';
 import { useCallback, useRef, useState } from 'react';
 import { PhotoFile } from 'react-native-vision-camera/src/types/PhotoFile';
 import PhotoPreview from '@/components/PhotoPreview';
+import Animated, { SlideOutDown, ZoomInRotate } from 'react-native-reanimated';
+import { useDebounceCallback } from 'usehooks-ts';
 
 export default function Index() {
   const device = useCameraDevice('back');
@@ -36,6 +38,8 @@ export default function Index() {
     setIsCameraActive(true);
   };
 
+  const debouncedTakePhoto = useDebounceCallback(handleTakePhoto);
+
   if (!hasPermission) {
     return <NoCameraPermission />;
   }
@@ -55,13 +59,17 @@ export default function Index() {
       />
 
       <View style={styles.shutterButtonWrapper}>
-        <ShutterButton onPress={handleTakePhoto} />
+        <ShutterButton onPress={debouncedTakePhoto} />
       </View>
 
       {lastTakenPhoto ? (
-        <View style={styles.fullScreenWrapper}>
+        <Animated.View
+          entering={ZoomInRotate}
+          exiting={SlideOutDown}
+          style={styles.fullScreenWrapper}
+        >
           <PhotoPreview handleRetake={handleRetake} photo={lastTakenPhoto} />
-        </View>
+        </Animated.View>
       ) : null}
     </View>
   );
