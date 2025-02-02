@@ -21,9 +21,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'blue',
     padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   innerButton: {
     height: '90%',
     width: '90%',
+    backgroundColor: 'gray',
+    borderRadius: 48,
   },
 });
