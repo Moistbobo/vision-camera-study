@@ -7,13 +7,16 @@ import {
 import NoCameraPermission from '@/components/NoCameraPermission';
 import NoCameraDevice from '@/components/NoCameraDevice';
 import ShutterButton from '@/components/ShutterButton';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PhotoFile } from 'react-native-vision-camera/src/types/PhotoFile';
 import PhotoPreview from '@/components/PhotoPreview';
 import Animated, { SlideOutDown, ZoomInRotate } from 'react-native-reanimated';
 import { useDebounceCallback } from 'usehooks-ts';
+import { useNavigation } from 'expo-router';
+import ShutterEffect from '@/components/ShutterEffect';
 
-export default function Index() {
+export default function CameraScreen() {
+  const navigation = useNavigation();
   const device = useCameraDevice('back');
   const { hasPermission } = useCameraPermission();
 
@@ -21,6 +24,7 @@ export default function Index() {
 
   const [lastTakenPhoto, setLastTakenPhoto] = useState<PhotoFile | null>(null);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(true);
+  const [showShutterEffect, setShowShutterEffect] = useState<boolean>(false);
 
   const handleTakePhoto = useCallback(async () => {
     if (!cameraRef?.current) {
@@ -28,14 +32,22 @@ export default function Index() {
       return;
     }
 
+    setShowShutterEffect(true);
+    setTimeout(() => {
+      setShowShutterEffect(false);
+    }, 150);
+
     const photo = await cameraRef.current.takePhoto();
+
     setLastTakenPhoto(photo);
     setIsCameraActive(false);
   }, [cameraRef?.current]);
 
   const handleRetake = () => {
-    setLastTakenPhoto(null);
     setIsCameraActive(true);
+    setTimeout(() => {
+      setLastTakenPhoto(null);
+    }, 250);
   };
 
   const debouncedTakePhoto = useDebounceCallback(handleTakePhoto);
@@ -71,6 +83,8 @@ export default function Index() {
           <PhotoPreview handleRetake={handleRetake} photo={lastTakenPhoto} />
         </Animated.View>
       ) : null}
+
+      <ShutterEffect isShown={showShutterEffect} />
     </View>
   );
 }
