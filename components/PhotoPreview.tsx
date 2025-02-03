@@ -1,14 +1,18 @@
-import react from 'react';
+import React from 'react';
 import type { PhotoFile } from 'react-native-vision-camera/src/types/PhotoFile';
 import { Button, Image, StyleSheet, View } from 'react-native';
-import React from 'react';
 
 type Props = {
   photo?: PhotoFile,
+  handleSave: () => void,
   handleRetake: () => void,
 };
 
-export default function PhotoPreview({ photo, handleRetake }: Props) {
+export default function PhotoPreview({
+  photo,
+  handleSave,
+  handleRetake,
+}: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.contentWrapper}>
@@ -16,6 +20,8 @@ export default function PhotoPreview({ photo, handleRetake }: Props) {
       </View>
 
       <View style={styles.buttonWrapper}>
+        <Button title="Save" onPress={handleSave} />
+
         <Button title="Retake" onPress={handleRetake} />
       </View>
     </View>
