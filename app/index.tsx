@@ -73,7 +73,6 @@ export default function CameraScreen() {
 
   const { run: debouncedTakePhoto } = useDebounceFn(handleTakePhoto);
 
-  // const composedGestures = Gesture.Race(zoomGesture, focusGesture);
   const composedGestures = Gesture.Race(panZoomGesture, focusGesture);
 
   if (!hasPermission) {

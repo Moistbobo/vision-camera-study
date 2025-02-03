@@ -18,14 +18,12 @@ type Props = {
 };
 
 export default function ZoomGauge({ zoomValue, coords }: Props) {
-  // const representedValue = useDerivedValue(() => zoomValue);
-
   const [representedValue, setRepresentedValue] = useState<number | null>(null);
 
   useAnimatedReaction(
     () => zoomValue,
     (currentValue) => {
-      runOnJS(setRepresentedValue)(zoomValue.value);
+      runOnJS(setRepresentedValue)(currentValue.value);
     },
   );
 
@@ -34,6 +32,7 @@ export default function ZoomGauge({ zoomValue, coords }: Props) {
     top: coords?.y?.value - 100,
     left: coords?.x?.value - 50,
   }));
+
   return (
     <Animated.View
       style={animatedStyle}
