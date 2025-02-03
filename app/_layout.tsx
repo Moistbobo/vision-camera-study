@@ -1,3 +1,4 @@
+import '../reanimatedConfig';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -9,7 +10,7 @@ export default function RootLayout() {
           headerShown: false,
         }}
       >
-        <Stack.Screen name="CameraScreen" />
+        <Stack.Screen name="index" />
       </Stack>
     </GestureHandlerRootView>
   );

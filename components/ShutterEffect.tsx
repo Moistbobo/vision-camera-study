@@ -2,12 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-type Props = {
-  isShown?: boolean,
-};
-
-export default function ShutterEffect({ isShown }: Props) {
-  if (!isShown) return null;
+export default function ShutterEffect() {
   return (
     <Animated.View
       entering={FadeIn.duration(100)}

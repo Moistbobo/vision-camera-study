@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   Camera,
   useCameraDevice,
@@ -17,6 +17,7 @@ import useZoomGesture from '@/hooks/Camera/useZoomGesture';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import FocusPoint from '@/components/FocusPoint';
 import { useDebounceFn } from 'ahooks';
+import ZoomGauge from '@/components/ZoomGauge';
 
 const ReanimatedCamera = Animated.createAnimatedComponent(Camera);
 Animated.addWhitelistedNativeProps({
@@ -31,10 +32,15 @@ export default function CameraScreen() {
 
   const { focusGesture, isFocusing, focusCoords } =
     useTapFocusGesture(cameraRef);
-  const { zoomGesture, cameraAnimatedProps } = useZoomGesture({
+  const {
+    panZoomGestureCoords,
+    panZoomGesture,
+    isZooming,
+    cameraAnimatedProps,
+    zoomValue,
+  } = useZoomGesture({
     deviceMinZoom: device?.minZoom,
     deviceMaxZoom: device?.maxZoom,
-    deviceNeutralZoom: device?.neutralZoom,
   });
 
   const [lastTakenPhoto, setLastTakenPhoto] = useState<PhotoFile | null>(null);
@@ -67,7 +73,8 @@ export default function CameraScreen() {
 
   const { run: debouncedTakePhoto } = useDebounceFn(handleTakePhoto);
 
-  const composedGestures = Gesture.Race(zoomGesture, focusGesture);
+  // const composedGestures = Gesture.Race(zoomGesture, focusGesture);
+  const composedGestures = Gesture.Race(panZoomGesture, focusGesture);
 
   if (!hasPermission) {
     return <NoCameraPermission />;
@@ -105,8 +112,10 @@ export default function CameraScreen() {
           <PhotoPreview handleRetake={handleRetake} photo={lastTakenPhoto} />
         </Animated.View>
       ) : null}
-
-      <ShutterEffect isShown={showShutterEffect} />
+      {showShutterEffect ? <ShutterEffect /> : null}
+      {isZooming ? (
+        <ZoomGauge coords={panZoomGestureCoords} zoomValue={zoomValue} />
+      ) : null}
     </View>
   );
 }
