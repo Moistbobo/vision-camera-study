@@ -18,6 +18,8 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import FocusPoint from '@/components/FocusPoint';
 import { useDebounceFn } from 'ahooks';
 import ZoomGauge from '@/components/ZoomGauge';
+import useSavePhoto from '@/hooks/Filesystem/useSavePhoto';
+import Toast from 'react-native-toast-message';
 
 const ReanimatedCamera = Animated.createAnimatedComponent(Camera);
 Animated.addWhitelistedNativeProps({
@@ -32,6 +34,7 @@ export default function CameraScreen() {
 
   const { focusGesture, isFocusing, focusCoords } =
     useTapFocusGesture(cameraRef);
+
   const {
     panZoomGestureCoords,
     panZoomGesture,
@@ -42,6 +45,8 @@ export default function CameraScreen() {
     deviceMinZoom: device?.minZoom,
     deviceMaxZoom: device?.maxZoom,
   });
+
+  const savePhotoAsync = useSavePhoto();
 
   const [lastTakenPhoto, setLastTakenPhoto] = useState<PhotoFile | null>(null);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(true);
@@ -63,6 +68,19 @@ export default function CameraScreen() {
     setLastTakenPhoto(photo);
     setIsCameraActive(false);
   }, [cameraRef?.current]);
+
+  const handleSavePhoto = async () => {
+    if (lastTakenPhoto) {
+      await savePhotoAsync(lastTakenPhoto);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Photo saved!',
+      });
+
+      handleRetake();
+    }
+  };
 
   const handleRetake = () => {
     setIsCameraActive(true);
@@ -108,7 +126,11 @@ export default function CameraScreen() {
           exiting={SlideOutDown}
           style={styles.fullScreenWrapper}
         >
-          <PhotoPreview handleRetake={handleRetake} photo={lastTakenPhoto} />
+          <PhotoPreview
+            handleSave={handleSavePhoto}
+            handleRetake={handleRetake}
+            photo={lastTakenPhoto}
+          />
         </Animated.View>
       ) : null}
       {showShutterEffect ? <ShutterEffect /> : null}
