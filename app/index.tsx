@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
 import {
   Camera,
   useCameraDevice,
@@ -7,10 +7,17 @@ import {
 import NoCameraPermission from '@/components/NoCameraPermission';
 import NoCameraDevice from '@/components/NoCameraDevice';
 import ShutterButton from '@/components/ShutterButton';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PhotoFile } from 'react-native-vision-camera/src/types/PhotoFile';
 import PhotoPreview from '@/components/PhotoPreview';
-import Animated, { SlideOutDown, ZoomInRotate } from 'react-native-reanimated';
+import Animated, {
+  SlideInDown,
+  SlideOutDown,
+  SlideOutUp,
+  useAnimatedStyle,
+  withTiming,
+  ZoomInRotate,
+} from 'react-native-reanimated';
 import ShutterEffect from '@/components/ShutterEffect';
 import useTapFocusGesture from '@/hooks/Camera/useTapFocusGesture';
 import useZoomGesture from '@/hooks/Camera/useZoomGesture';
@@ -20,6 +27,11 @@ import { useDebounceFn } from 'ahooks';
 import ZoomGauge from '@/components/ZoomGauge';
 import useSavePhoto from '@/hooks/Filesystem/useSavePhoto';
 import Toast from 'react-native-toast-message';
+import { useNavigation } from 'expo-router';
+import CropButton from '@/components/CropButton';
+
+const screenWidth = Dimensions.get('window').width;
+const screenHeight = Dimensions.get('window').height;
 
 const ReanimatedCamera = Animated.createAnimatedComponent(Camera);
 Animated.addWhitelistedNativeProps({
@@ -27,6 +39,7 @@ Animated.addWhitelistedNativeProps({
 });
 
 export default function CameraScreen() {
+  const navigation = useNavigation();
   const device = useCameraDevice('back');
   const { hasPermission } = useCameraPermission();
 
@@ -51,6 +64,30 @@ export default function CameraScreen() {
   const [lastTakenPhoto, setLastTakenPhoto] = useState<PhotoFile | null>(null);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(true);
   const [showShutterEffect, setShowShutterEffect] = useState<boolean>(false);
+
+  const [cropMode, setCropMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (cropMode) {
+      navigation.setOptions({
+        headerShown: false,
+      });
+    } else {
+      navigation.setOptions({
+        headerShown: false,
+      });
+    }
+  }, [cropMode]);
+
+  const cameraAnimatedStyle = useAnimatedStyle(() => {
+    const height = cropMode ? screenWidth : screenHeight;
+
+    return {
+      height,
+      width: screenWidth,
+      position: cropMode ? 'relative' : 'absolute',
+    };
+  }, [cropMode]);
 
   const handleTakePhoto = useCallback(async () => {
     if (!cameraRef?.current) {
@@ -103,11 +140,18 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
+      {cropMode ? (
+        <Animated.View
+          entering={SlideInDown}
+          exiting={SlideOutUp}
+          style={styles.cropBlockerTop}
+        />
+      ) : null}
       <GestureDetector gesture={composedGestures}>
         <ReanimatedCamera
           ref={cameraRef}
           photo
-          style={StyleSheet.absoluteFill}
+          style={cameraAnimatedStyle}
           device={device}
           isActive={isCameraActive}
           animatedProps={cameraAnimatedProps}
@@ -137,6 +181,15 @@ export default function CameraScreen() {
       {isZooming ? (
         <ZoomGauge coords={panZoomGestureCoords} zoomValue={zoomValue} />
       ) : null}
+
+      <View style={styles.cropButtonWrapper}>
+        <CropButton
+          isCropping={cropMode}
+          handlePress={() => {
+            setCropMode((prev) => !prev);
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -152,6 +205,16 @@ const styles = StyleSheet.create({
   },
   fullScreenWrapper: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'white',
+  },
+  cropButtonWrapper: {
+    position: 'absolute',
+    top: 32,
+    right: 16,
+  },
+  cropBlockerTop: {
+    width: screenWidth,
+    height: screenHeight * 0.1,
     backgroundColor: 'white',
   },
 });
